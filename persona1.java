@@ -11,62 +11,48 @@ import java.util.Scanner;
 
 public class persona1 {
 
-    public void enviar_lista(){
-        File carpeta = new File("ruta_de_la_carpeta");
+    public void enviar_lista(String ruta_archivo) throws Exception {
+        File carpeta = new File(ruta_archivo);
         String lista_archivos;
-
+        DatagramSocket sock = new DatagramSocket();
         File[] archivos = carpeta.listFiles();
         if (archivos != null) {
             System.out.println("Archivos y directorios en la carpeta:");
             for (File archivo : archivos) {
-                lista_archivos += archivo.getName() + ',';
+                lista_archivos += archivo.getName() + '\n';
             }
         }
-
         byte ip[] = {(byte) 127,0,0, (byte) 1};
         InetAddress server = InetAddress.getByAddress(ip);
-        byte[] outBuf = lista_archivos..;
+        byte[] outBuf = lista_archivos.getBytes("US-ASCII");
         DatagramPacket outPkt = new DatagramPacket(outBuf, outBuf.length,server, 8888);
         sock.send(outPkt);
-        byte[] inBuf = new byte[1000];
-        DatagramPacket inPkt = new DatagramPacket(inBuf, inBuf.length);
-        sock.receive(inPkt);
-        System.out.println("Recevied...");
-
-        String reply = new String(inBuf, 0, inPkt.getLength(), "US-ASCII");
-        System.out.println(reply);
         sock.close();
     }
 }
 
-    public static void main(String args[]) throws Exception {
-        File carpeta = new File("ruta_de_la_carpeta");
-        String lista_archivos
 
-        File[] archivos = carpeta.listFiles();
-        if (archivos != null) {
-            System.out.println("Archivos y directorios en la carpeta:");
-            for (File archivo : archivos) {
-                System.out.println(archivo.getName());
-            }
-        }
+    public static void main(String args[]) throws Exception {
+        enviar_lista();
+        hiloCliente hilo = new hiloCliente();
+        hilo.start();
         DatagramSocket sock = new DatagramSocket();
         Scanner s1 = new Scanner(System.in);
         String ruta_archivo =  s1.nextLine();
-        File archivo = new File(ruta_archivo);
-        Path archivo_salida = Paths.get(ruta_archivo);
         byte ip[] = {(byte) 127,0,0, (byte) 1};
         InetAddress server = InetAddress.getByAddress(ip);
-        byte[] outBuf = archivo_salida.;
+        byte[] outBuf = ruta_archivo.getBytes("US-ASCII");
         DatagramPacket outPkt = new DatagramPacket(outBuf, outBuf.length,server, 8888);
         sock.send(outPkt);
         byte[] inBuf = new byte[1000];
         DatagramPacket inPkt = new DatagramPacket(inBuf, inBuf.length);
         sock.receive(inPkt);
-        System.out.println("Recevied...");
-
-        String reply = new String(inBuf, 0, inPkt.getLength(), "US-ASCII");
-        System.out.println(reply);
+        String destino = new String(inBuf, 0, 31, "US-ASCII");
+        int puerto = new Integer(inBuf, 32, 49);
+        InetAddress ipdestino = InetAddress.getByAddress(destino);
+        DatagramPacket peticion = new DatagramPacket(outBuf, outBuf.length, ipdestino, puerto );
+        hiloCliente hilo = new hiloClienteReceptor();
+        hilo.start();
         sock.close();
         System.out.println("Socket closed...");
 }
