@@ -11,10 +11,9 @@ import java.util.Scanner;
 
 public class persona1 {
 
-    public void enviar_lista(String ruta_archivo) throws Exception {
+    public void enviar_lista(DatagramSocket sock,String ruta_archivo) throws Exception {
         File carpeta = new File(ruta_archivo);
         String lista_archivos;
-        DatagramSocket sock = new DatagramSocket();
         File[] archivos = carpeta.listFiles();
         if (archivos != null) {
             System.out.println("Archivos y directorios en la carpeta:");
@@ -22,6 +21,7 @@ public class persona1 {
                 lista_archivos += archivo.getName() + '\n';
             }
         }
+        lista_archivos += sock.getLocalPort();
         byte ip[] = {(byte) 127,0,0, (byte) 1};
         InetAddress server = InetAddress.getByAddress(ip);
         byte[] outBuf = lista_archivos.getBytes("US-ASCII");
@@ -33,10 +33,16 @@ public class persona1 {
 
 
     public static void main(String args[]) throws Exception {
-        enviar_lista();
-        hiloCliente hilo = new hiloCliente();
-        hilo.start();
         DatagramSocket sock = new DatagramSocket();
+        try {
+            enviar_lista(sock,"C:\\Users\\Usuario\\Desktop\\prueba");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }        
+        // hilo para esperar si le llega un peticion para enviar un archivo :)
+        hiloClienteEnvio hilo = new hiloClienteEnvio(sock);
+        hilo.start();
+        // pedirle un archivo para pedir al server al usuario
         Scanner s1 = new Scanner(System.in);
         String ruta_archivo =  s1.nextLine();
         byte ip[] = {(byte) 127,0,0, (byte) 1};
@@ -47,12 +53,15 @@ public class persona1 {
         byte[] inBuf = new byte[1000];
         DatagramPacket inPkt = new DatagramPacket(inBuf, inBuf.length);
         sock.receive(inPkt);
+        // armaar el paquete para pedir al usuario que tenga el archivo que me lo pase
         String destino = new String(inBuf, 0, 31, "US-ASCII");
-        int puerto = new Integer(inBuf, 32, 49);
-        InetAddress ipdestino = InetAddress.getByAddress(destino);
+        String puertoString = new String(inBuf, 32, 49, "US-ASCII");
+        int puerto = new Integer(puertoString);
+        InetAddress ipdestino = InetAddress.getByName(destino);
         DatagramPacket peticion = new DatagramPacket(outBuf, outBuf.length, ipdestino, puerto );
-        hiloCliente hilo = new hiloClienteReceptor();
-        hilo.start();
+        sock.send(peticion);
+        hiloClienteReceptor hiloR = new hiloClienteReceptor(sock);
+        hiloR.start();
         sock.close();
         System.out.println("Socket closed...");
 }
