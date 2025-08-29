@@ -9,7 +9,7 @@ import java.util.Scanner;
 
 
 
-public class persona1 {
+public class persona2 {
     
     public static void enviar_lista(DatagramSocket sock,String ruta_archivo) throws Exception {
         File carpeta = new File(ruta_archivo);
@@ -35,7 +35,7 @@ public class persona1 {
     public static void main(String args[]) throws Exception {
         DatagramSocket sock = new DatagramSocket();
         try {
-            persona1.enviar_lista(sock,"carpetap1");
+            persona2.enviar_lista(sock,"carpetap2");
         } catch (Exception e) {
             e.printStackTrace();
         }        
